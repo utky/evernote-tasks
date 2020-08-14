@@ -9,6 +9,7 @@ lazy val root = (project in file("."))
   .settings(
     name := "evernote-tasks",
     libraryDependencies += "com.evernote" % "evernote-api" % "1.25.1",
+    libraryDependencies += "org.scalatra.scalate" %% "scalate-core" % "1.9.6",
     libraryDependencies += scalaTest % Test
   )
 

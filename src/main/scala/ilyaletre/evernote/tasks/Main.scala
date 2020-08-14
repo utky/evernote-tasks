@@ -1,14 +1,20 @@
 package ilyaletre.evernote.tasks 
 
 import collection.JavaConverters._
-import com.evernote.auth.{EvernoteAuth, EvernoteService}
-import com.evernote.clients.{ClientFactory}
+
 import com.evernote.edam.`type`.{Notebook}
+import ilyaletre.evernote.tasks.Evernote._
+import ilyaletre.evernote.tasks.GetTemplate._
+import ilyaletre.evernote.tasks.CreateNote._
 
 object Main extends App {
   val token = System.getenv("EVERNOTE_AUTH_TOKEN")
-  val evernoteAuth = new EvernoteAuth(EvernoteService.SANDBOX, token)
-  val factory = new ClientFactory(evernoteAuth)
-  val noteStore = factory.createNoteStoreClient()
-  noteStore.listNotebooks().asScala.foreach { println((_:Notebook)) }
+  args(0) match {
+    case "weekly-review" => {
+      val evernote = Evernote(token)
+      evernote.getTemplate(args(0))
+    }
+  }
+
+
 }
