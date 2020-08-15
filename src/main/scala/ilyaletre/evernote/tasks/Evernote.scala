@@ -8,16 +8,37 @@ import com.evernote.edam.notestore.{NoteFilter, NotesMetadataResultSpec}
 import ilyaletre.evernote.tasks.CreateNote.CreateReq
 import com.evernote.auth.{EvernoteAuth, EvernoteService}
 import com.evernote.clients.{ClientFactory}
+import cats.data.ReaderT
+import cats.data.Kleisli._
+import com.evernote.edam.notestore.NoteMetadata
 
-case class Evernote(noteStoreClient: NoteStoreClient)
-
+//case class Evernote(noteStoreClient: NoteStoreClient)
 object Evernote {
-  def apply(token: String): Evernote = {
+
+  type Evernote[A] = ReaderT[Try, NoteStoreClient, A]
+
+  def apply[A](f: Evernote[A])(token: String): Try[A] = {
     val evernoteAuth = new EvernoteAuth(EvernoteService.SANDBOX, token)
     val factory = new ClientFactory(evernoteAuth)
-    val noteStore = factory.createNoteStoreClient()
-    Evernote(noteStore)
+    val client = factory.createNoteStoreClient()
+    f.run(client)
   }
+
+  def findOneNote(
+    client: NoteStoreClient,
+    filter: NoteFilter,
+    resultSpec: NotesMetadataResultSpec): Note = {
+    val metadata = client.findNotesMetadata(filter, 0, 1, resultSpec)
+    if (metadata.getNotesSize() < 1) {
+      val message = s"Could not find any note by words: ${filter.getWords()}"
+      throw new IllegalArgumentException(message)
+    }
+    else {
+      val guid = metadata.getNotes().get(0).getGuid()
+      client.getNote(guid, true, false, false, false)
+    }
+  }
+
   implicit val getTemplate = new GetTemplate[Evernote] {
     /**
       * 1. [[findNotesMetadata https://dev.evernote.com/doc/reference/javadoc/com/evernote/edam/notestore/NoteStore.Client.html#findNotesMetadata(java.lang.String,%20com.evernote.edam.notestore.NoteFilter,%20int,%20int,%20com.evernote.edam.notestore.NotesMetadataResultSpec)]] w/ filter notebook, intitle
@@ -27,21 +48,13 @@ object Evernote {
       * @param title
       * @return
       */
-    def getTemplate(self: Evernote, title: String): Try[Template] = {
+    def getTemplate(title: String): Evernote[Template] = ReaderT { client =>
       val filter = new NoteFilter()
       filter.setWords(Query.fromPredicates(Seq(Notebook("template"), Title(title))))
       val spec = new NotesMetadataResultSpec()
       Try {
-        val metadata = self.noteStoreClient.findNotesMetadata(filter, 0, 1, spec)
-        if (metadata.getNotesSize() < 1) {
-          val message = s"Could not find any note having notebook: template, title: $title"
-          throw new IllegalArgumentException(message)
-        }
-        else {
-          val guid = metadata.getNotes().get(0).getGuid()
-          val note = self.noteStoreClient.getNote(guid, true, false, false, false)
-          NoteTemplate(note)
-        }
+        val note = findOneNote(client, filter, spec)
+        NoteTemplate(note)
       }
     }
   }
@@ -63,9 +76,9 @@ object Evernote {
       * @param req
       * @return
       */
-    def createNote(self: Evernote, req: CreateReq): Try[Unit] = {
+    def createNote(req: CreateReq): Evernote[Unit] = ReaderT { client =>
       Try {
-        val books = self.noteStoreClient.listNotebooks().asScala.filter { notebook => notebook.getName == req.notebook }
+        val books = client.listNotebooks().asScala.filter { notebook => notebook.getName == req.notebook }
         if (books.length < 1) {
           val message = s"Could not find any notebook: ${req.notebook}"
           throw new IllegalArgumentException(message)
@@ -77,7 +90,45 @@ object Evernote {
         note.setActive(true)
         note.setNotebookGuid(nbguid)
         note.setTagNames(req.tags.toList.asJava)
-        self.noteStoreClient.createNote(note)
+        client.createNote(note)
+      }
+    }
+  }
+  implicit val findNotes = new FindNotes[Evernote] {
+    /**
+      * 
+      *
+      * @param predicates
+      * @return
+      */
+    def findNotes(predicates: Seq[Predicate]): Evernote[List[NoteMetadata]] = ReaderT { client => 
+      Try {
+        val words = Query.fromPredicates(predicates)
+        val filter = new NoteFilter()
+        filter.setWords(words)
+        val spec = new NotesMetadataResultSpec()
+        val metadata = client.findNotesMetadata(filter, 0, 255, spec)
+        metadata.getNotes().asScala.toList
+      }
+    }
+  }
+  implicit val getNote = new GetNote[Evernote] {
+    /**
+      * 
+      *
+      * @param title
+      * @return
+      */
+    def getNoteByTitle(notebook: String, title: String): Evernote[Note] = ReaderT { client =>
+      val filter = new NoteFilter()
+      val words = Query.fromPredicates(Seq(
+        Notebook(notebook),
+        Title(title)
+      ))
+      filter.setWords(words)
+      val spec = new NotesMetadataResultSpec()
+      Try {
+        findOneNote(client, filter, spec)
       }
     }
   }
