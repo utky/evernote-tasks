@@ -11,9 +11,12 @@ import com.evernote.clients.{ClientFactory}
 import cats.data.ReaderT
 import cats.data.Kleisli._
 import com.evernote.edam.notestore.NoteMetadata
+import com.typesafe.scalalogging.Logger
 
 //case class Evernote(noteStoreClient: NoteStoreClient)
 object Evernote {
+
+  lazy val logger = Logger("Evernote")
 
   type Evernote[A] = ReaderT[Try, NoteStoreClient, A]
 
@@ -21,6 +24,7 @@ object Evernote {
     val evernoteAuth = new EvernoteAuth(EvernoteService.SANDBOX, token)
     val factory = new ClientFactory(evernoteAuth)
     val client = factory.createNoteStoreClient()
+    logger.info(s"evernote NoteStoreClient ${client}")
     f.run(client)
   }
 
@@ -29,12 +33,16 @@ object Evernote {
     filter: NoteFilter,
     resultSpec: NotesMetadataResultSpec): Note = {
     val metadata = client.findNotesMetadata(filter, 0, 1, resultSpec)
+    logger.info(s"NoteMetadataList noteSize: ${metadata.getNotesSize()}")
+    logger.info(s"NoteMetadataList searchWords: ${metadata.getSearchedWords()}")
+    logger.info(s"NoteMetadataList totalNotes: ${metadata.getTotalNotes()}")
     if (metadata.getNotesSize() < 1) {
       val message = s"Could not find any note by words: ${filter.getWords()}"
       throw new IllegalArgumentException(message)
     }
     else {
       val guid = metadata.getNotes().get(0).getGuid()
+      logger.info(s"getting a note by guid: ${guid}")
       client.getNote(guid, true, false, false, false)
     }
   }
@@ -54,6 +62,7 @@ object Evernote {
       val spec = new NotesMetadataResultSpec()
       Try {
         val note = findOneNote(client, filter, spec)
+        logger.info(s"Got template title: ${note.getTitle()}")
         NoteTemplate(note)
       }
     }
@@ -84,6 +93,8 @@ object Evernote {
           throw new IllegalArgumentException(message)
         }
         val nbguid = books.head.getGuid()
+        logger.info(s"Notebook guid to create new note: ${nbguid}")
+        logger.info(s"New note: ${req}")
         val note = new Note()
         note.setTitle(req.title)
         note.setContent(req.content)
@@ -128,6 +139,7 @@ object Evernote {
       filter.setWords(words)
       val spec = new NotesMetadataResultSpec()
       Try {
+        logger.info(s"stating to getNoteByTitle notebook: ${notebook}, title: ${title}")
         findOneNote(client, filter, spec)
       }
     }
