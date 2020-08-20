@@ -57,6 +57,7 @@ object Evernote {
       * @return
       */
     def getTemplate(title: String): Evernote[Template] = ReaderT { client =>
+      logger.info(s"getting template with title: ${title}")
       val filter = new NoteFilter()
       filter.setWords(Query.fromPredicates(Seq(Notebook("template"), Title(title))))
       val spec = new NotesMetadataResultSpec()
@@ -107,7 +108,7 @@ object Evernote {
   }
   implicit val findNotes = new FindNotes[Evernote] {
     /**
-      * 
+      * Search multiple notes by specified critria.
       *
       * @param predicates
       * @return
@@ -115,18 +116,21 @@ object Evernote {
     def findNotes(predicates: Seq[Predicate]): Evernote[List[NoteMetadata]] = ReaderT { client => 
       Try {
         val words = Query.fromPredicates(predicates)
+        logger.info(s"fiding notes by words: ${words}")
         val filter = new NoteFilter()
         filter.setWords(words)
         val spec = new NotesMetadataResultSpec()
         val metadata = client.findNotesMetadata(filter, 0, 255, spec)
+        logger.info(s"found metadata ${metadata.getNotesSize()}")
         metadata.getNotes().asScala.toList
       }
     }
   }
   implicit val getNote = new GetNote[Evernote] {
     /**
-      * 
+      * Fetch single note by title and belonging notebook name.
       *
+      * @param notebook
       * @param title
       * @return
       */

@@ -19,13 +19,9 @@ object WeeklyReview {
     : FindNotes
     : GetNote
     : Monad]
-    (date: ZonedDateTime, templateTitle: String): F[Unit] = {
+    (date: ZonedDateTime, templateFile: String): F[Unit] = {
     val oneWeekAgo = date.minus(daysOfWeek, ChronoUnit.DAYS)
     val title = dateFormat.format(date)
-    val context = Map(
-      "logs" -> List[String](),
-      "todo" -> List[String]()
-    )
     val predicates = Seq(
       Notebook(targetNotebook),
       Created(DaysBefore(daysOfWeek))
@@ -35,7 +31,11 @@ object WeeklyReview {
     for {
       postsThisWeek <- FindNotes[F].findNotes(predicates)
       previousReview <- GetNote[F].getNoteByTitle(targetNotebook, dateFormat.format(oneWeekAgo))
-      template <- GetTemplate[F].getTemplate(templateTitle)
+      context = Map(
+        "logs" -> List[String](),
+        "todo" -> List[String]()
+      )
+      template = FileTemplate(templateFile)
       content = template.render(context)
       result <- CreateNote[F].createNote(CreateNote.CreateReq(
         title,

@@ -18,3 +18,11 @@ case class NoteTemplate(note: Note) extends Template {
     note.getContent()
   }
 }
+
+case class FileTemplate(path: String) extends Template {
+  def render(parameters: Map[String, Any]): String = {
+    val engine = new TemplateEngine()
+    val templateSource = TemplateSource.fromFile(path)
+    engine.layout(templateSource, parameters)
+  }
+}
