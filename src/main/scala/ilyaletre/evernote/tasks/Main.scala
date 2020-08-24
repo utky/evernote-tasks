@@ -19,7 +19,7 @@ object Main extends App {
     case "weekly-review" => {
       val today = ZonedDateTime.now(ZoneId.of("Asia/Tokyo"))
       logger.info(s"today: ${today}")
-      val action = WeeklyReview(today, args(1))
+      val action = WeeklyReview(today)
       logger.info(s"start to interact with evernote API")
       Evernote(action)(token) match {
         case Failure(exception) => logger.error("weekly-review failed", exception)

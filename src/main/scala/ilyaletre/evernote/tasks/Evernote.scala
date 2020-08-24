@@ -21,7 +21,7 @@ object Evernote {
   type Evernote[A] = ReaderT[Try, NoteStoreClient, A]
 
   def apply[A](f: Evernote[A])(token: String): Try[A] = {
-    val evernoteAuth = new EvernoteAuth(EvernoteService.SANDBOX, token)
+    val evernoteAuth = new EvernoteAuth(EvernoteService.PRODUCTION, token)
     val factory = new ClientFactory(evernoteAuth)
     val client = factory.createNoteStoreClient()
     logger.info(s"evernote NoteStoreClient ${client}")

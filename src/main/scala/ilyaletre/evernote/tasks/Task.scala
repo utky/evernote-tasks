@@ -19,7 +19,7 @@ object WeeklyReview {
     : FindNotes
     : GetNote
     : Monad]
-    (date: ZonedDateTime, templateFile: String): F[Unit] = {
+    (date: ZonedDateTime): F[Unit] = {
     val oneWeekAgo = date.minus(daysOfWeek, ChronoUnit.DAYS)
     val title = dateFormat.format(date)
     val predicates = Seq(
@@ -35,15 +35,15 @@ object WeeklyReview {
         "logs" -> List[String](),
         "todo" -> List[String]()
       )
-      template = FileTemplate(templateFile)
+      template = FileTemplate("templates/weekly-review.xml.mustache")
       content = template.render(context)
-      result <- CreateNote[F].createNote(CreateNote.CreateReq(
-        title,
-        content,
-        targetNotebook,
-        Seq("review")
-      ))
+      // result <- CreateNote[F].createNote(CreateNote.CreateReq(
+      //   title,
+      //   content,
+      //   targetNotebook,
+      //   Seq("review")
+      // ))
     }
-    yield Try { result }
+    yield Try { () }
   }
 }
