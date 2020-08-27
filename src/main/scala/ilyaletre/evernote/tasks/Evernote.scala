@@ -13,7 +13,6 @@ import cats.data.Kleisli._
 import com.evernote.edam.notestore.NoteMetadata
 import com.typesafe.scalalogging.Logger
 
-//case class Evernote(noteStoreClient: NoteStoreClient)
 object Evernote {
 
   lazy val logger = Logger("Evernote")
@@ -32,7 +31,9 @@ object Evernote {
     client: NoteStoreClient,
     filter: NoteFilter,
     resultSpec: NotesMetadataResultSpec): Note = {
+    logger.debug(s"start findOneNote findNotesMetadata")
     val metadata = client.findNotesMetadata(filter, 0, 1, resultSpec)
+    logger.debug(s"end findOneNote findNotesMetadata")
     logger.info(s"NoteMetadataList noteSize: ${metadata.getNotesSize()}")
     logger.info(s"NoteMetadataList searchWords: ${metadata.getSearchedWords()}")
     logger.info(s"NoteMetadataList totalNotes: ${metadata.getTotalNotes()}")
@@ -43,7 +44,10 @@ object Evernote {
     else {
       val guid = metadata.getNotes().get(0).getGuid()
       logger.info(s"getting a note by guid: ${guid}")
-      client.getNote(guid, true, false, false, false)
+      logger.debug(s"start findOneNote getNote: ${guid}")
+      val note = client.getNote(guid, true, false, false, false)
+      logger.debug(s"end findOneNote getNote: ${guid}")
+      note
     }
   }
 
@@ -120,7 +124,9 @@ object Evernote {
         val filter = new NoteFilter()
         filter.setWords(words)
         val spec = new NotesMetadataResultSpec()
+      logger.debug(s"start findNotes findNotesMetadata:")
         val metadata = client.findNotesMetadata(filter, 0, 255, spec)
+      logger.debug(s"end findNotes findNotesMetadata:")
         logger.info(s"found metadata ${metadata.getNotesSize()}")
         metadata.getNotes().asScala.toList
       }
@@ -149,7 +155,10 @@ object Evernote {
     }
     def getNoteById(id: String): Evernote[Note] = ReaderT { client =>
       Try {
-        client.getNote(id, true, false, false, false)
+        logger.debug(s"start getNoteByTitle getNote: ${id}")
+        val note = client.getNote(id, true, false, false, false)
+        logger.debug(s"end getNoteByTitle getNote: ${id}")
+        note
       }
     }
   }

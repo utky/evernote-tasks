@@ -50,7 +50,6 @@ object WeeklyReview {
         "logs" -> logs,
       )
 
-      // FIXME インデントが全然うまくいってない
       template = FileTemplate("templates/weekly-review.xml.mustache")
 
       content = template.render(context)
