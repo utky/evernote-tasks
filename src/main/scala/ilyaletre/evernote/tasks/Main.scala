@@ -16,7 +16,6 @@ object Main extends App {
   val logger = Logger("Main")
   val timeZone = ZoneId.of("Asia/Tokyo")
   val token = System.getenv("EVERNOTE_AUTH_TOKEN")
-  logger.info(s"args: ${args}")
   args(0) match {
     case "weekly-review" => {
 
