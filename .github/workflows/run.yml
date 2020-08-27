@@ -12,3 +12,5 @@ jobs:
       uses: lokkju/github-action-sbt@master
       with:
         commands: run weekly-review 2020-08-30
+      env:
+        EVERNOTE_AUTH_TOKEN: ${{ secrets.EVERNOTE_AUTH_TOKEN }}
