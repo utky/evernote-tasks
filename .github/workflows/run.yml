@@ -1,7 +1,7 @@
 name: Run utky-note-processor
 on:
   schedule:
-    - cron: '0 0 * * 0'
+    - cron: '0 0 * * *'
 
 jobs:
   run:
@@ -11,4 +11,4 @@ jobs:
     - name: run sbt
       uses: lokkju/github-action-sbt@master
       with:
-        commands: run
+        commands: run weekly-review 2020-08-30
