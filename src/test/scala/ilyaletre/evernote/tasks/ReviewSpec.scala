@@ -6,7 +6,7 @@ import com.evernote.edam.`type`.{Note}
 class ReviewSpec extends AnyFunSpec {
   describe("Review") {
     it("should decode content") {
-      val decoded = Review.decodeReview("""<?xml version="1.0" encoding="UTF-8"?>
+      val decoded = HeaderedListParser.parseHeaderedList("## ToDo", """<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">
 <en-note>
 <div>## ToDo</div>
@@ -28,14 +28,7 @@ class ReviewSpec extends AnyFunSpec {
 <div><br/></div>
 <div><br/></div>
 </en-note>""")
-      val expected: Either[DecodeError, Review] = Right(Review(
-        Seq("todo item 1", "todo item 2"),
-        Seq(
-          DaySummary("2020-08-19", Seq("0819 summary")),
-          DaySummary("2020-08-20", Seq("0820 summary"))
-        ),
-        Seq("next item 1", "next item 2")
-      ))
+      val expected = Seq("todo item 1", "todo item 2")
       assert(decoded == expected)
     }
   }

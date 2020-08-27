@@ -147,5 +147,10 @@ object Evernote {
         findOneNote(client, filter, spec)
       }
     }
+    def getNoteById(id: String): Evernote[Note] = ReaderT { client =>
+      Try {
+        client.getNote(id, true, false, false, false)
+      }
+    }
   }
 }

@@ -21,6 +21,8 @@ sealed trait Predicate
 case class Notebook(name: String) extends Predicate
 case class Title(name: String) extends Predicate
 case class Created(time: TimeSpan) extends Predicate
+case class Updated(time: TimeSpan) extends Predicate
+case class Tag(tag: String) extends Predicate
 case class Not(p: Predicate) extends Predicate
 
 object Predicate {
@@ -29,6 +31,8 @@ object Predicate {
       case Notebook(name) => ("notebook", name)
       case Title(name) => ("intitle", s""""$name"""")
       case Created(t) => ("created", t.toString())
+      case Updated(t) => ("updated", t.toString())
+      case Tag(tag) => ("tag", tag)
       case Not(Not(p)) => Predicate.asPair(p)
       case Not(p) => {
         val (k, v) = Predicate.asPair(p)

@@ -24,25 +24,44 @@ object WeeklyReview {
     val title = dateFormat.format(date)
     val predicates = Seq(
       Notebook(targetNotebook),
-      Created(DaysBefore(daysOfWeek))
+      Updated(DaysBefore(daysOfWeek))
     )
     logger.info(s"oneWeekAgo: ${oneWeekAgo}")
     logger.info(s"title: ${title}")
     for {
-      postsThisWeek <- FindNotes[F].findNotes(predicates)
-      previousReview <- GetNote[F].getNoteByTitle(targetNotebook, dateFormat.format(oneWeekAgo))
+      lastReview <- GetNote[F].getNoteByTitle(targetNotebook, dateFormat.format(oneWeekAgo))
+      plan = Review.decodePlan(lastReview.getContent()).getOrElse(Seq()).map { p => Map("summary" -> p)}
+
+      _ = logger.info(s"read plan: ${plan}")
+
+      notesMetaThisWeek <- FindNotes[F].findNotes(predicates)
+      notesThisWeek <- notesMetaThisWeek.traverse {notemeta => GetNote[F].getNoteById(notemeta.getGuid())}
+      logs = notesThisWeek.sortBy { _.getTitle() }.map { note =>
+        Map(
+          "title" -> note.getTitle(),
+          "topics" -> Review.decodeSummary(note.getContent()).getOrElse(Seq()).map { summary => Map("summary" -> summary) }
+          )
+      }
+
+      _ = logger.info(s"read logs: ${logs}")
+
       context = Map(
-        "logs" -> List[String](),
-        "todo" -> List[String]()
+        "todo" -> plan,
+        "logs" -> logs,
       )
+
+      // FIXME インデントが全然うまくいってない
       template = FileTemplate("templates/weekly-review.xml.mustache")
+
       content = template.render(context)
-      // result <- CreateNote[F].createNote(CreateNote.CreateReq(
-      //   title,
-      //   content,
-      //   targetNotebook,
-      //   Seq("review")
-      // ))
+
+      _ = logger.info(s"generated new review: ${content}")
+      result <- CreateNote[F].createNote(CreateNote.CreateReq(
+        title,
+        content,
+        targetNotebook,
+        Seq("review")
+      ))
     }
     yield Try { () }
   }

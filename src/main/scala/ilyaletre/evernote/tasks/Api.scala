@@ -41,6 +41,7 @@ object FindNotes {
 
 trait GetNote[F[_]] {
   def getNoteByTitle(notebook: String, title: String): F[Note]
+  def getNoteById(id: String): F[Note]
 }
 
 object GetNote {
