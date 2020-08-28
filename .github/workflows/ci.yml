@@ -2,7 +2,7 @@ name: Run evernote batch
 
 on:
   schedule:
-    - cron: 30 * * * *  
+    - cron: 0 21 * * 6
 
 jobs:
   run:
@@ -16,7 +16,7 @@ jobs:
       with:
         java-version: 11
     - name: Run weekly-review
-      run: sbt 'run weekly-review 2020-08-30'
+      run: sbt 'run weekly-review'
       env:
         EVERNOTE_AUTH_TOKEN: ${{ secrets.EVERNOTE_AUTH_TOKEN }}
     - name: Cache SBT
