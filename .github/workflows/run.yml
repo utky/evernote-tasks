@@ -8,6 +8,8 @@ jobs:
     name: run sbt
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v2
+
     - name: run sbt
       uses: lokkju/github-action-sbt@master
       with:
